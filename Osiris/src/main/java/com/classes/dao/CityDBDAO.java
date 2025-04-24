@@ -1,32 +1,39 @@
 package com.classes.dao;
 
 import com.classes.model.City;
-import org.springframework.stereotype.Component;
+import com.classes.model.CityRowMapper;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
 
-@Component
-public class CityDBDAO implements ICityDAO  {
+import java.util.List;
 
-    // Static method to return a static City object based on ID
-    public City getCityById(Long id) {
-        // Returning static City objects for demonstration
-        if (id == 1L) {
-            return new City(1L, "Casa", 40.7128, -74.0060); // Static object for Casa
-        } else if (id == 2L) {
-            return new City(2L, "Tanger", 34.0522, -118.2437); // Static object for Tanger
-        } else {
-            return null; // Return null if no city is found for the given ID
+@Repository
+public class CityDBDAO {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public CityDBDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public List<City> findAllCities() {
+        String sql = "SELECT * FROM city";
+        return jdbcTemplate.query(sql, new CityRowMapper());
+    }
+
+    public City findCityById(Long id) {
+        String sql = "SELECT * FROM city WHERE id = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, new Object[]{id}, new CityRowMapper());
+        } catch (EmptyResultDataAccessException e) {
+            return null; // Return null if no city is found
         }
     }
 
-    // Static method to return a City by Name
-    public City getCityByName(String name) {
-        // Return a static city based on the name
-        if ("Paris".equalsIgnoreCase(name)) {
-            return new City(1L, "Casa", 48.8566, 2.3522); // Static object for Paris
-        } else if ("London".equalsIgnoreCase(name)) {
-            return new City(2L, "Tanger", 51.5074, -0.1278); // Static object for London
-        } else {
-            return null; // Return null if no city is found for the given name
-        }
+    // Insert a new city
+    public int saveCity(City city) {
+        String sql = "INSERT INTO city (id, name, latitude, longitude) VALUES (?, ?, ?, ?)";
+        return jdbcTemplate.update(sql, city.getId(), city.getName(), city.getLatitude(), city.getLongitude());
     }
 }
